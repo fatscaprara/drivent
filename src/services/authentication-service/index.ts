@@ -7,18 +7,11 @@ import jwt from "jsonwebtoken";
 import { invalidCredentialsError } from "./errors";
 
 async function signIn(params: SignInParams): Promise<SignInResult> {
-  const { email, password } = params;
-
-  const user = await getUserOrFail(email);
-
-  await validatePasswordOrFail(password, user.password);
-
+  const user = await getUserOrFail(params.email);
+  await validatePasswordOrFail(params.password, user.password);
   const token = await createSession(user.id);
 
-  return {
-    user: exclude(user, "password"),
-    token,
-  };
+  return { user: exclude(user, "password"), token };
 }
 
 async function getUserOrFail(email: string): Promise<GetUserOrFailResult> {
