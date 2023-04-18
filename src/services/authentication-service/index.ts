@@ -1,43 +1,35 @@
 import sessionRepository from "@/repositories/session-repository";
-import userRepository from "@/repositories/user-repository";
+import userRepository, { User } from "@/repositories/user-repository";
 import { exclude } from "@/utils/prisma-utils";
-import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 import { invalidCredentialsError } from "./errors";
 
 async function signIn(params: SignInParams): Promise<SignInResult> {
-  const user = await getUserOrFail(params.email);
-  await validatePasswordOrFail(params.password, user.password);
+  const user = await userRepository.findByEmail(params.email);
+  await validateUserAndPassword(user, params.password);
   const token = await createSession(user.id);
 
   return { user: exclude(user, "password"), token };
 }
 
-async function getUserOrFail(email: string): Promise<GetUserOrFailResult> {
-  const user = await userRepository.findByEmail(email, {
-    id: true,
-    email: true,
-    password: true,
-  });
-  if (!user) throw invalidCredentialsError();
+async function validateUserAndPassword(user: User | null, password: string) {
+  if (!user) {
+    throw invalidCredentialsError();
+  }
 
-  return user;
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    throw invalidCredentialsError();
+  }
 }
 
-async function createSession(userId: number) {
+async function createSession(userId: number): Promise<string> {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET);
-  await sessionRepository.create({
-    token,
-    userId,
-  });
-
+  await sessionRepository.create({ token, userId });
   return token;
-}
-
-async function validatePasswordOrFail(password: string, userPassword: string) {
-  const isPasswordValid = await bcrypt.compare(password, userPassword);
-  if (!isPasswordValid) throw invalidCredentialsError();
 }
 
 export type SignInParams = Pick<User, "email" | "password">;
@@ -46,8 +38,6 @@ type SignInResult = {
   user: Pick<User, "id" | "email">;
   token: string;
 };
-
-type GetUserOrFailResult = Pick<User, "id" | "email" | "password">;
 
 const authenticationService = {
   signIn,

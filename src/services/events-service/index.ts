@@ -1,21 +1,31 @@
 import { notFoundError } from "@/errors";
 import eventRepository from "@/repositories/event-repository";
-import { exclude } from "@/utils/prisma-utils";
 import { Event } from "@prisma/client";
 import dayjs from "dayjs";
 
-async function getFirstEvent(): Promise<GetFirstEventResult> {
-  const event = await eventRepository.findFirst();
-  if (!event) throw notFoundError();
+export interface EventWithoutTimestamps extends Omit<Event, "createdAt" | "updatedAt"> {}
 
-  return exclude(event, "createdAt", "updatedAt");
+export async function getFirstEvent(): Promise<EventWithoutTimestamps> {
+  const event = await eventRepository.findFirst();
+  if (!event) {
+    throw notFoundError();
+  }
+
+  return {
+    id: event.id,
+    name: event.name,
+    description: event.description,
+    location: event.location,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+  };
 }
 
-export type GetFirstEventResult = Omit<Event, "createdAt" | "updatedAt">;
-
-async function isCurrentEventActive(): Promise<boolean> {
+export async function isCurrentEventActive(): Promise<boolean> {
   const event = await eventRepository.findFirst();
-  if (!event) return false;
+  if (!event) {
+    return false;
+  }
 
   const now = dayjs();
   const eventStartsAt = dayjs(event.startsAt);
@@ -30,3 +40,4 @@ const eventsService = {
 };
 
 export default eventsService;
+
