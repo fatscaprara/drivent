@@ -5,11 +5,11 @@ import { AuthenticatedRequest } from "@/middlewares";
 import paymentService from "@/services/payments-service";
 
 export async function getPaymentByTicketId(
-  req: AuthenticatedRequest,
+  req: AuthenticatedRequest<{ ticketId: number }>,
   res: Response
-) {
+): Promise<void> {
   const { userId } = req;
-  const ticketId = Number(req.query.ticketId);
+  const { ticketId } = req.params;
 
   if (!ticketId) {
     return res.sendStatus(httpStatus.BAD_REQUEST);
@@ -31,7 +31,10 @@ export async function getPaymentByTicketId(
   }
 }
 
-export async function paymentProcess(req: AuthenticatedRequest, res: Response) {
+export async function paymentProcess(
+  req: AuthenticatedRequest<{}, { ticketId: number, cardData: any }>,
+  res: Response
+): Promise<void> {
   const { userId } = req;
   const { ticketId, cardData } = req.body;
 

@@ -3,7 +3,10 @@ import ticketService from "@/services/tickets-service";
 import { Response } from "express";
 import httpStatus from "http-status";
 
-export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
+export async function getTicketTypes(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
   try {
     const ticketTypes = await ticketService.getTicketTypes();
 
@@ -13,22 +16,27 @@ export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
   }
 }
 
-export async function getTickets(req: AuthenticatedRequest, res: Response) {
+export async function getTickets(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
   const { userId } = req;
 
   try {
-    const ticketTypes = await ticketService.getTicketByUserId(userId);
+    const tickets = await ticketService.getTicketsByUserId(userId);
 
-    return res.status(httpStatus.OK).send(ticketTypes);
+    return res.status(httpStatus.OK).send(tickets);
   } catch (error) {
     return res.sendStatus(httpStatus.NOT_FOUND);
   }
 }
 
-export async function createTicket(req: AuthenticatedRequest, res: Response) {
+export async function createTicket(
+  req: AuthenticatedRequest<{}, { ticketTypeId: number }>,
+  res: Response
+): Promise<void> {
   const { userId } = req;
 
-  //TODO validação do JOI
   const { ticketTypeId } = req.body;
 
   if (!ticketTypeId) {
@@ -36,11 +44,10 @@ export async function createTicket(req: AuthenticatedRequest, res: Response) {
   }
 
   try {
-    const ticketTypes = await ticketService.createTicket(userId, ticketTypeId);
+    const ticket = await ticketService.createTicket(userId, ticketTypeId);
 
-    return res.status(httpStatus.CREATED).send(ticketTypes);
+    return res.status(httpStatus.CREATED).send(ticket);
   } catch (error) {
     return res.sendStatus(httpStatus.NOT_FOUND);
   }
 }
-

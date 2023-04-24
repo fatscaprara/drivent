@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import enrollmentsService from "@/services/enrollments-service";
 
-export async function getEnrollmentByUser(
-  req: Request,
+export async function getEnrollmentWithAddressByUserId(
+  req: Request<{ userId: string }, {}, {}>,
   res: Response
 ): Promise<void> {
-  const { userId } = req;
+  const { userId } = req.params;
   try {
     const enrollmentWithAddress =
       await enrollmentsService.getOneWithAddressByUserId(userId);
@@ -16,15 +16,15 @@ export async function getEnrollmentByUser(
   }
 }
 
-export async function postCreateOrUpdateEnrollment(
-  req: Request,
+export async function createOrUpdateEnrollmentWithAddress(
+  req: Request<{}, {}, { userId: string }>,
   res: Response
 ): Promise<void> {
   const { body } = req;
   try {
     await enrollmentsService.createOrUpdateEnrollmentWithAddress({
       ...body,
-      userId: req.userId,
+      userId: req.params.userId,
     });
     res.sendStatus(httpStatus.OK);
   } catch (error) {
@@ -32,11 +32,11 @@ export async function postCreateOrUpdateEnrollment(
   }
 }
 
-export async function getAddressFromCEP(
-  req: Request,
+export async function getAddressByCEP(
+  req: Request<{}, {}, {}, { cep: string }>,
   res: Response
 ): Promise<void> {
-  const cep = req.query?.cep as string;
+  const { cep } = req.query;
   if (!cep) {
     res.sendStatus(httpStatus.BAD_REQUEST);
     return;
